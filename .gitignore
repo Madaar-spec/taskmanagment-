@@ -6,9 +6,9 @@ playwright-report
 test-results
 .env
 .env.local
-storage/
+/storage/
 *.tsbuildinfo
 next-env.d.ts
-storage-test/
-storage-e2e/
+/storage-test/
+/storage-e2e/
 .env*.local
