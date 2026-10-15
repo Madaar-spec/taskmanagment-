@@ -11,3 +11,4 @@ storage/
 next-env.d.ts
 storage-test/
 storage-e2e/
+.env*.local
