@@ -1,0 +1,204 @@
+// نموذج البيانات — BRD القسم 5
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  EMPLOYEE
+  MANAGER
+  VIEWER
+  ADMIN
+
+  @@map("role")
+}
+
+enum TaskStatus {
+  NEW
+  IN_PROGRESS
+  REVIEW
+  DONE
+
+  @@map("task_status")
+}
+
+enum Priority {
+  HIGH
+  MEDIUM
+  LOW
+
+  @@map("priority")
+}
+
+enum ActivityType {
+  COMMENT
+  CREATED
+  STATUS_CHANGED
+  ASSIGNEE_CHANGED
+  PRIORITY_CHANGED
+  DUE_CHANGED
+  SUBTASK_TOGGLED
+  REOPENED
+
+  @@map("activity_type")
+}
+
+model Department {
+  id        String   @id @default(uuid()) @db.Uuid
+  nameAr    String   @unique @map("name_ar") @db.VarChar(150)
+  managerId String?  @map("manager_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  manager User?  @relation("DepartmentManager", fields: [managerId], references: [id], onDelete: SetNull)
+  users   User[] @relation("DepartmentUsers")
+  tasks   Task[]
+
+  @@map("departments")
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  fullNameAr   String   @map("full_name_ar") @db.VarChar(150)
+  email        String   @unique @db.VarChar(200)
+  passwordHash String?  @map("password_hash") @db.VarChar(255)
+  role         Role
+  departmentId String   @map("department_id") @db.Uuid
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  department        Department     @relation("DepartmentUsers", fields: [departmentId], references: [id])
+  managedDepartment Department[]   @relation("DepartmentManager")
+  assignedTasks     Task[]         @relation("TaskAssignee")
+  createdTasks      Task[]         @relation("TaskCreator")
+  completedTasks    Task[]         @relation("TaskCompleter")
+  activities        TaskActivity[]
+  attachments       Attachment[]
+  notifications     Notification[]
+
+  @@index([departmentId])
+  @@map("users")
+}
+
+model Task {
+  id            String     @id @default(uuid()) @db.Uuid
+  /// BR-11: T- + nextval('task_code_seq') — يُولَّد في قاعدة البيانات
+  code          String     @unique @default(dbgenerated("('T-'::text || nextval('task_code_seq'::regclass))")) @db.VarChar(12)
+  title         String     @db.VarChar(200)
+  description   String?
+  status        TaskStatus @default(NEW)
+  priority      Priority   @default(MEDIUM)
+  dueDate       DateTime   @map("due_date") @db.Date
+  requestRef    String?    @map("request_ref") @db.VarChar(13)
+  assigneeId    String     @map("assignee_id") @db.Uuid
+  departmentId  String     @map("department_id") @db.Uuid
+  createdById   String     @map("created_by_id") @db.Uuid
+  completedAt   DateTime?  @map("completed_at") @db.Timestamptz(3)
+  completedById String?    @map("completed_by_id") @db.Uuid
+  deletedAt     DateTime?  @map("deleted_at") @db.Timestamptz(3)
+  createdAt     DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  assignee      User           @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  createdBy     User           @relation("TaskCreator", fields: [createdById], references: [id])
+  completedBy   User?          @relation("TaskCompleter", fields: [completedById], references: [id])
+  department    Department     @relation(fields: [departmentId], references: [id])
+  subtasks      Subtask[]
+  activities    TaskActivity[]
+  attachments   Attachment[]
+  notifications Notification[]
+
+  @@index([departmentId, status])
+  @@index([assigneeId, status])
+  @@index([dueDate])
+  @@index([requestRef])
+  @@index([createdById])
+  @@map("tasks")
+}
+
+model Subtask {
+  id        String   @id @default(uuid()) @db.Uuid
+  taskId    String   @map("task_id") @db.Uuid
+  text      String   @db.VarChar(200)
+  isDone    Boolean  @default(false) @map("is_done")
+  sortOrder Int      @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId, sortOrder])
+  @@map("subtasks")
+}
+
+/// BR-15: Append-only — يُمنع UPDATE/DELETE بمشغّل في قاعدة البيانات
+model TaskActivity {
+  id        String       @id @default(uuid()) @db.Uuid
+  taskId    String       @map("task_id") @db.Uuid
+  actorId   String       @map("actor_id") @db.Uuid
+  type      ActivityType
+  body      String?
+  oldValue  Json?        @map("old_value")
+  newValue  Json?        @map("new_value")
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime     @default(now()) @map("updated_at") @db.Timestamptz(3)
+
+  task  Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  actor User @relation(fields: [actorId], references: [id])
+
+  @@index([taskId, createdAt])
+  @@map("task_activities")
+}
+
+model Attachment {
+  id           String   @id @default(uuid()) @db.Uuid
+  taskId       String   @map("task_id") @db.Uuid
+  fileName     String   @map("file_name") @db.VarChar(255)
+  mimeType     String   @map("mime_type") @db.VarChar(100)
+  sizeBytes    Int      @map("size_bytes")
+  storageKey   String   @map("storage_key") @db.VarChar(500)
+  uploadedById String   @map("uploaded_by_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  task       Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  uploadedBy User @relation(fields: [uploadedById], references: [id])
+
+  @@index([taskId])
+  @@map("attachments")
+}
+
+model Notification {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  taskId    String    @map("task_id") @db.Uuid
+  messageAr String    @map("message_ar") @db.VarChar(300)
+  readAt    DateTime? @map("read_at") @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@map("notifications")
+}
+
+/// جدول تقني (خارج الجداول السبعة) لتحديد محاولات الدخول — NFR-02 (5 في 15 دقيقة)
+/// يُخزَّن في قاعدة البيانات ليعمل مع عدة نسخ من الخادم.
+model LoginAttempt {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @db.VarChar(200)
+  ip        String?  @db.VarChar(64)
+  succeeded Boolean
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([email, createdAt])
+  @@map("login_attempts")
+}

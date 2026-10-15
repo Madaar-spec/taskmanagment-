@@ -1,0 +1,29 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: madaar
+    ports: ['5432:5432']
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      retries: 10
+  app:
+    build: .
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/madaar?schema=public
+      DIRECT_URL: postgresql://postgres:postgres@db:5432/madaar?schema=public
+      SESSION_SECRET: ${SESSION_SECRET:-dev-only-secret-change-me-please-0123456789}
+      APP_FIXED_TODAY: ${APP_FIXED_TODAY:-}
+      STORAGE_DRIVER: local
+      STORAGE_LOCAL_DIR: /app/storage
+    ports: ['3000:3000']
+    volumes: [attachments:/app/storage]
+volumes:
+  pgdata:
+  attachments:
