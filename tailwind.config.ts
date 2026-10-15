@@ -6,17 +6,17 @@ export default {
   theme: {
     extend: {
       colors: {
-        bg: 'var(--bg)',
-        header: 'var(--header)',
-        surface: 'var(--surface)',
-        'surface-2': 'var(--surface-2)',
-        border: 'var(--border)',
-        'border-strong': 'var(--border-strong)',
-        primary: 'var(--primary)',
-        accent: 'var(--accent)',
-        ink: 'var(--ink)',
-        'ink-muted': 'var(--ink-muted)',
-        danger: 'var(--danger)',
+        bg: 'rgb(var(--bg-rgb) / <alpha-value>)',
+        header: 'rgb(var(--header-rgb) / <alpha-value>)',
+        surface: 'rgb(var(--surface-rgb) / <alpha-value>)',
+        'surface-2': 'rgb(var(--surface-2-rgb) / <alpha-value>)',
+        border: 'rgb(var(--border-rgb) / <alpha-value>)',
+        'border-strong': 'rgb(var(--border-strong-rgb) / <alpha-value>)',
+        primary: 'rgb(var(--primary-rgb) / <alpha-value>)',
+        accent: 'rgb(var(--accent-rgb) / <alpha-value>)',
+        ink: 'rgb(var(--ink-rgb) / <alpha-value>)',
+        'ink-muted': 'rgb(var(--ink-muted-rgb) / <alpha-value>)',
+        danger: 'rgb(var(--danger-rgb) / <alpha-value>)',
         st: {
           new: '#9CC9F0',
           progress: '#F0CF7E',

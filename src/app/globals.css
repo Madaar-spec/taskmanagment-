@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* رموز تصميم مدار — BRD القسم 6 */
+:root {
+  --bg: #0b2630;
+  --bg-rgb: 11 38 48;
+  --header: #082029;
+  --header-rgb: 8 32 41;
+  --surface: #10303b;
+  --surface-rgb: 16 48 59;
+  --surface-2: #0f2d38;
+  --surface-2-rgb: 15 45 56;
+  --border: #1b3e4b;
+  --border-rgb: 27 62 75;
+  --border-strong: #2b5564;
+  --border-strong-rgb: 43 85 100;
+  --primary: #1e6a5e;
+  --primary-rgb: 30 106 94;
+  --accent: #49baa6;
+  --accent-rgb: 73 186 166;
+  --ink: #e8f1f1;
+  --ink-rgb: 232 241 241;
+  --ink-muted: #b9cdd1;
+  --ink-muted-rgb: 185 205 209;
+  --danger: #f5a285;
+  --danger-rgb: 245 162 133;
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+body {
+  font-family: 'DIN Next LT Arabic', 'Readex Pro', Tahoma, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* حلقة تركيز 2px بلون --accent لا تُزال */
+:focus-visible {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 2px;
+}
+
+@layer components {
+  .card {
+    @apply rounded-card border border-border bg-surface;
+  }
+  .field {
+    @apply min-h-touch w-full rounded-field border border-border-strong bg-bg px-3 py-2 text-ink placeholder:text-ink-muted/70;
+  }
+  .field[aria-invalid='true'] {
+    @apply border-danger;
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-ink;
+  }
+  .field-error {
+    @apply mt-1.5 text-sm text-danger;
+  }
+  .btn {
+    @apply inline-flex min-h-touch items-center justify-center gap-2 rounded-pill px-5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-primary text-ink hover:bg-[#185a50];
+  }
+  .btn-secondary {
+    @apply btn border border-border-strong bg-transparent text-ink hover:bg-surface;
+  }
+  .btn-danger {
+    @apply btn border border-danger/60 bg-transparent text-danger hover:bg-danger/10;
+  }
+  .btn-icon {
+    @apply inline-flex min-h-touch min-w-touch items-center justify-center rounded-pill text-ink-muted transition-colors hover:bg-surface hover:text-ink;
+  }
+  .section-title {
+    @apply text-sm font-semibold text-accent;
+  }
+  .skeleton {
+    @apply animate-pulse rounded-md bg-[#1f4553];
+  }
+}
+
+/* اللوحة الجانبية تنزلق من اليسار */
+@keyframes slide-in-left {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.panel-content[data-state='open'] {
+  animation: slide-in-left 200ms ease-out;
+}
+.overlay[data-state='open'] {
+  animation: fade-in 150ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .panel-content[data-state='open'],
+  .overlay[data-state='open'] {
+    animation: none;
+  }
+  .animate-pulse {
+    animation: none;
+  }
+}
